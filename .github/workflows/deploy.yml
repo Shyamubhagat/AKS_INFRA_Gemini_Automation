@@ -8,10 +8,6 @@ on:
     branches:
       - main
 
-permissions:
-  contents: read
-  id-token: write
-
 jobs:
   lint-and-scan:
     name: "Lint & Security Scan"
@@ -46,13 +42,12 @@ jobs:
         with:
           directory: .
           framework: terraform
-          soft_fail: true # Set to false to block deployment on security findings
+          soft_fail: true
 
   terraform-plan:
     name: "Terraform Plan"
     needs: lint-and-scan
     runs-on: ubuntu-latest
-    environment: production
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -60,9 +55,7 @@ jobs:
       - name: Azure Login
         uses: azure/login@v2
         with:
-          client-id: ${{ 60665674-ca68-4056-a3cc-181c0aded0a4 }}
-          tenant-id: ${{ ee474d25-b116-4c5f-b0ed-623eba5e2cbc }}
-          subscription-id: ${{ 142e1fd7-3d12-4746-a726-9cad1bf51b04 }}
+          creds: '{"clientId":"${{ secrets.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ secrets.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -75,17 +68,16 @@ jobs:
       - name: Terraform Plan
         run: terraform plan -out=tfplan
         env:
-          ARM_CLIENT_ID: ${{ 60665674-ca68-4056-a3cc-181c0aded0a4 }}
-          ARM_TENANT_ID: ${{ ee474d25-b116-4c5f-b0ed-623eba5e2cbc }}
-          ARM_SUBSCRIPTION_ID: ${{ 142e1fd7-3d12-4746-a726-9cad1bf51b04 }}
-          ARM_USE_MSI: true
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
 
   terraform-apply:
     name: "Terraform Apply"
     needs: terraform-plan
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    environment: production
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -93,9 +85,7 @@ jobs:
       - name: Azure Login
         uses: azure/login@v2
         with:
-          client-id: ${{ 60665674-ca68-4056-a3cc-181c0aded0a4 }}
-          tenant-id: ${{ ee474d25-b116-4c5f-b0ed-623eba5e2cbc }}
-          subscription-id: ${{ 142e1fd7-3d12-4746-a726-9cad1bf51b04 }}
+          creds: '{"clientId":"${{ secrets.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ secrets.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -108,7 +98,7 @@ jobs:
       - name: Terraform Apply
         run: terraform apply -auto-approve
         env:
-          ARM_CLIENT_ID: ${{ 60665674-ca68-4056-a3cc-181c0aded0a4 }}
-          ARM_TENANT_ID: ${{ ee474d25-b116-4c5f-b0ed-623eba5e2cbc }}
-          ARM_SUBSCRIPTION_ID: ${{ 142e1fd7-3d12-4746-a726-9cad1bf51b04 }}
-          ARM_USE_MSI: true
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
