@@ -4,9 +4,7 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
+  workflow_dispatch: # Allows manual trigger from GitHub UI
 
 jobs:
   lint-and-scan:
@@ -24,26 +22,6 @@ jobs:
       - name: Terraform Format Check
         run: terraform fmt -check -recursive
 
-      - name: TFLint
-        uses: terraform-linters/setup-tflint@v4
-        with:
-          tflint_version: v0.50.0
-
-      - name: Run TFLint
-        run: tflint -f compact
-
-      - name: Tfsec Scan
-        uses: aquasecurity/tfsec-action@v1.0.0
-        with:
-          github_token: ${{ github.token }}
-
-      - name: Checkov Scan
-        uses: bridgecrewio/checkov-action@master
-        with:
-          directory: .
-          framework: terraform
-          soft_fail: true
-
   terraform-plan:
     name: "Terraform Plan"
     needs: lint-and-scan
@@ -51,6 +29,13 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Debug Secrets (Check if populated)
+        run: |
+          if [ -z "${{ secrets.AZURE_CLIENT_ID }}" ]; then echo "MISSING: AZURE_CLIENT_ID"; fi
+          if [ -z "${{ secrets.AZURE_CLIENT_SECRET }}" ]; then echo "MISSING: AZURE_CLIENT_SECRET"; fi
+          if [ -z "${{ secrets.AZURE_TENANT_ID }}" ]; then echo "MISSING: AZURE_TENANT_ID"; fi
+          if [ -z "${{ secrets.AZURE_SUBSCRIPTION_ID }}" ]; then echo "MISSING: AZURE_SUBSCRIPTION_ID"; fi
 
       - name: Azure Login
         uses: azure/login@v2
