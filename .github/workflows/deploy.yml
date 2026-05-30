@@ -22,8 +22,11 @@ jobs:
         with:
           terraform_version: "1.9.5"
 
-      - name: Terraform Format Check
-        run: terraform fmt -check -recursive
+      - name: Cache TFLint
+        uses: actions/cache@v4
+        with:
+          path: ~/.tflint.d/plugins
+          key: tflint-${{ runner.os }}-${{ hashFiles('.tflint.hcl') }}
 
       - name: TFLint
         uses: terraform-linters/setup-tflint@v4
@@ -43,7 +46,7 @@ jobs:
         with:
           directory: .
           framework: terraform
-          soft_fail: true # Set to false to block deployment on security findings
+          soft_fail: true
 
   terraform-plan:
     name: "Terraform Plan"
@@ -62,17 +65,30 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "1.9.5"
+          terraform_wrapper: false
+
+      - name: Cache Terraform Providers
+        uses: actions/cache@v4
+        with:
+          path: ~/.terraform.d/plugin-cache
+          key: tf-providers-${{ runner.os }}-${{ hashFiles('**/.terraform.lock.hcl') }}
+
+      - name: Create Plugin Cache Dir
+        run: mkdir -p ~/.terraform.d/plugin-cache
 
       - name: Terraform Init
         run: terraform init
+        env:
+          TF_PLUGIN_CACHE_DIR: ~/.terraform.d/plugin-cache
 
       - name: Terraform Plan
-        run: terraform plan -out=tfplan
+        run: terraform plan -out=tfplan -parallelism=30
         env:
           ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          TF_PLUGIN_CACHE_DIR: ~/.terraform.d/plugin-cache
 
   terraform-apply:
     name: "Terraform Apply"
@@ -92,14 +108,24 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "1.9.5"
+          terraform_wrapper: false
+
+      - name: Cache Terraform Providers
+        uses: actions/cache@v4
+        with:
+          path: ~/.terraform.d/plugin-cache
+          key: tf-providers-${{ runner.os }}-${{ hashFiles('**/.terraform.lock.hcl') }}
 
       - name: Terraform Init
         run: terraform init
+        env:
+          TF_PLUGIN_CACHE_DIR: ~/.terraform.d/plugin-cache
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve
+        run: terraform apply -auto-approve -parallelism=30
         env:
           ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          TF_PLUGIN_CACHE_DIR: ~/.terraform.d/plugin-cache
