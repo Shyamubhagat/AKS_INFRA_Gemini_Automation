@@ -1,7 +1,7 @@
 resource "azurerm_resource_group" "rg" {
   for_each = var.resource_groups
 
-  name     = each.key
+  name     = each.value.name
   location = each.value.location
   tags     = each.value.tags
 }

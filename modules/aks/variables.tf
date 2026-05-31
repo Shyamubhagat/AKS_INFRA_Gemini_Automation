@@ -1,5 +1,6 @@
 variable "clusters" {
   type = map(object({
+    name                = string
     resource_group_name = string
     location            = string
     dns_prefix          = string
@@ -36,6 +37,7 @@ variable "clusters" {
     }))
 
     extra_node_pools = optional(map(object({
+      name       = string
       vm_size    = string
       node_count = optional(number, 1)
       zones      = optional(list(string))

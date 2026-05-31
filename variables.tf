@@ -1,5 +1,6 @@
 variable "resource_groups" {
   type = map(object({
+    name     = string
     location = string
     tags     = optional(map(string), {})
   }))
@@ -7,6 +8,7 @@ variable "resource_groups" {
 
 variable "registries" {
   type = map(object({
+    name               = string
     resource_group_key = string
     location           = optional(string)
     sku                = optional(string)
@@ -23,6 +25,7 @@ variable "registries" {
 
 variable "aks_clusters" {
   type = map(object({
+    name               = string
     resource_group_key = string
     location           = optional(string)
     dns_prefix         = string
@@ -37,6 +40,7 @@ variable "aks_clusters" {
       max_count           = optional(number)
     })
     extra_node_pools = optional(map(object({
+      name       = string
       vm_size    = string
       node_count = optional(number)
     })))

@@ -1,7 +1,7 @@
 resource "azurerm_kubernetes_cluster" "aks" {
   for_each = var.clusters
 
-  name                = each.key
+  name                = each.value.name
   location            = each.value.location
   resource_group_name = each.value.resource_group_name
   dns_prefix          = each.value.dns_prefix
@@ -50,10 +50,9 @@ resource "azurerm_kubernetes_cluster" "aks" {
 resource "azurerm_kubernetes_cluster_node_pool" "extra" {
   for_each = merge([
     for cluster_name, cluster_data in var.clusters : {
-      for pool_name, pool_data in cluster_data.extra_node_pools :
-      "${cluster_name}-${pool_name}" => merge(pool_data, {
+      for pool_key, pool_data in cluster_data.extra_node_pools :
+      "${cluster_name}-${pool_key}" => merge(pool_data, {
         cluster_id = azurerm_kubernetes_cluster.aks[cluster_name].id
-        name       = pool_name
       })
     }
   ]...)
